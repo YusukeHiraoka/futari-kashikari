@@ -71,9 +71,12 @@ h1{font-size:clamp(23px,5vw,31px);letter-spacing:.04em;margin:0;color:var(--pink
 label{display:block;font-size:12px;font-weight:750;color:#a7798f;margin-bottom:6px}
 input,select{width:100%;border:1px solid #f0d6e1;background:#fffafd;border-radius:13px;padding:12px;color:var(--ink);outline:none}
 input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
-.preset-btns{display:flex;gap:8px;margin-top:6px}
-.preset-btn{border:1px solid #f0d6e1;background:#fff0f5;color:var(--pink-dark);border-radius:10px;padding:6px 12px;font-size:12px;font-weight:750;flex:1;transition:all .15s}
-.preset-btn:active{background:var(--pink);color:#fff}
+
+/* スライダー用スタイル */
+.slider-container{margin-top:8px;background:#fff0f5;border:1px solid #f0d6e1;border-radius:12px;padding:10px 12px}
+.slider-header{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:750;color:var(--pink-dark);margin-bottom:6px}
+.slider-input{accent-color:var(--pink);margin:4px 0;width:100%;cursor:pointer}
+
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .primary{border:0;border-radius:15px;background:linear-gradient(100deg,#e58caf,#cf6590);color:white;font-weight:800;padding:14px 16px;width:100%;box-shadow:0 5px 12px #cf659025}
 .secondary{border:0;border-radius:12px;background:#fff0f5;color:#a86682;font-weight:750;padding:10px 13px}
@@ -140,15 +143,20 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
         <div class="field">
           <label for="amount">金額（円）</label>
           <input id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="例：2800" required>
-          <div class="preset-btns hidden" id="presetBtns">
-            <button type="button" class="preset-btn" id="btnHalf">半額 (¥0)</button>
-            <button type="button" class="preset-btn" id="btnFull">全額 (¥0)</button>
-          </div>
         </div>
         <div class="field"><label for="entryDate">日付</label><input id="entryDate" type="date" required></div>
       </div>
+
+      <!-- 10%単位の返済割合スライダー -->
+      <div class="slider-container hidden" id="sliderBox">
+        <div class="slider-header">
+          <span>返済割合：<strong id="ratioLabel">50:50 (割り勘)</strong></span>
+          <span id="calcAmountLabel">¥0</span>
+        </div>
+        <input type="range" id="ratioSlider" class="slider-input" min="0" max="100" step="10" value="50">
+      </div>
       
-      <div class="field"><label for="note">メモ（任意）</label><input id="note" type="text" maxlength="180" placeholder="例：寿司代、カフェ、デート代"></div>
+      <div class="field" style="margin-top:12px"><label for="note">メモ（任意）</label><input id="note" type="text" maxlength="180" placeholder="例：寿司代、カフェ、デート代"></div>
       <button class="primary" id="saveBtn" type="submit">＋ ふたりの記録に追加</button>
       <button class="secondary hidden" id="cancelEdit" type="button" style="width:100%;margin-top:8px">編集をキャンセル</button>
     </form>
@@ -225,8 +233,21 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
       });
     } else {
       $("parentField").classList.add("hidden");
-      $("presetBtns").classList.add("hidden");
+      $("sliderBox").classList.add("hidden");
       parentSelect.value = "";
+    }
+  }
+
+  // スライダー位置から割合テキストと金額を更新
+  function updateSliderValue() {
+    const pct = Number($("ratioSlider").value);
+    const otherPct = 100 - pct;
+    $("ratioLabel").textContent = `${pct}:${otherPct}` + (pct === 50 ? " (割り勘)" : pct === 100 ? " (全額)" : "");
+    
+    if (currentParentAmount) {
+      const calcVal = Math.round(currentParentAmount * (pct / 100));
+      $("calcAmountLabel").textContent = yen(calcVal);
+      $("amount").value = calcVal;
     }
   }
 
@@ -289,7 +310,8 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     $("formTitle").textContent="🐾 記録を追加";
     $("saveBtn").textContent="＋ ふたりの記録に追加";
     $("cancelEdit").classList.add("hidden");
-    $("presetBtns").classList.add("hidden");
+    $("sliderBox").classList.add("hidden");
+    $("ratioSlider").value = 50;
     updateParentOptions();
   }
 
@@ -318,26 +340,18 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
       const parent = entries.find(x => x.id === pId);
       if (parent) {
         currentParentAmount = parent.amount;
-        const half = Math.round(currentParentAmount / 2);
-        
-        $("btnHalf").textContent = `半額 (${yen(half)})`;
-        $("btnFull").textContent = `全額 (${yen(currentParentAmount)})`;
-        $("presetBtns").classList.remove("hidden");
-        
-        $("amount").value = half;
+        $("sliderBox").classList.remove("hidden");
+        $("ratioSlider").value = 50; // デフォルト半額 (50:50)
+        updateSliderValue();
       }
     } else {
-      $("presetBtns").classList.add("hidden");
+      $("sliderBox").classList.add("hidden");
       currentParentAmount = 0;
     }
   });
 
-  $("btnHalf").addEventListener("click", () => {
-    if (currentParentAmount) $("amount").value = Math.round(currentParentAmount / 2);
-  });
-  $("btnFull").addEventListener("click", () => {
-    if (currentParentAmount) $("amount").value = currentParentAmount;
-  });
+  // スライダー操作時に金額をリアルタイム反映
+  $("ratioSlider").addEventListener("input", updateSliderValue);
 
   $("entryDate").value=localDate();
   $("entryForm").addEventListener("submit",async ev=>{
