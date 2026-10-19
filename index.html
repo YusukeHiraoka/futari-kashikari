@@ -103,19 +103,21 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     <span>🐾 ふたりの家計</span>
   </div>
 
+  <!-- 一番上のカード：清算問わず、今月ふたりで使った全額を表示 -->
   <section class="card total-card">
-    <div class="card-heading"><div><div class="eyebrow">💗 今月の未清算支出</div><div class="month-caption" id="monthCaption">今月もたのしく記録しよう</div></div><span class="calendar">🗓️</span></div>
+    <div class="card-heading"><div><div class="eyebrow">💗 今月の合計支出</div><div class="month-caption" id="monthCaption">今月もたのしく記録しよう</div></div><span class="calendar">🗓️</span></div>
     <div class="total" id="total">¥0</div>
     <div class="progress"><span id="progress"></span></div>
     <div class="budget-row"><span id="budgetText">予算 ¥40,000</span><span id="remainingText">残り ¥40,000</span></div>
   </section>
 
+  <!-- 二番目のカード：現在まだ清算されていない金額だけを表示 -->
   <section class="pair-grid">
     <div class="card person-card"><div class="person-top"><div class="animal">🐶</div><div><div class="person-name" id="myLabel">ゆうすけくん</div><div class="person-caption">未清算の立替</div></div></div><span class="paw">🐾</span><div class="person-total" id="mine">¥0</div></div>
     <div class="card person-card"><div class="person-top"><div class="animal">🐱</div><div><div class="person-name" id="partnerLabel">ひまりちゃん</div><div class="person-caption">未清算の立替</div></div></div><span class="paw">🐾</span><div class="person-total" id="partner">¥0</div></div>
   </section>
 
-  <!-- 未清算分の精算案内 -->
+  <!-- 三番目のカード：未清算分をイーブンにする案内 -->
   <div class="settle-card">
     <div class="settle-title">⚖️ 未精算分をイーブン（半々）にするには？</div>
     <div class="settle-text" id="settleText">未精算の立替はありません！🎉</div>
@@ -124,7 +126,7 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   <section class="card">
     <div class="section-title"><h2>♡ 最近の記録</h2><button class="text-btn" id="showAll">すべて見る ›</button></div>
     <div id="entries" class="entries"><div class="empty">まだ記録がないよ 🐾<br>最初の思い出を追加してみよう！</div></div>
-    <div class="notice">※ 返済を記録すると、対象の立替が「清算済み 🌸」になり集計から自動で除外されます。</div>
+    <div class="notice">※ 返済を記録すると、対象の立替が「清算済み 🌸」になり精算カードから除外されます。</div>
   </section>
 
   <section class="card form-card" id="formSection">
@@ -137,7 +139,6 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
         <option value="you_repaid">🐶 ゆうすけくん ➔ ひまりちゃんへ返済</option>
       </select></div>
       
-      <!-- 未清算の親記録を選択 -->
       <div class="field hidden" id="parentField">
         <label for="parentId">どの立替を精算する？（必須）</label>
         <select id="parentId"><option value="">選択してください</option></select>
@@ -187,7 +188,6 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   function getBudget(){return Math.max(0,Number(localStorage.getItem("futari-budget")||40000)||0);}
   function setBudget(){const value=prompt("今月の予算を入力してね（円）",String(getBudget()));if(value===null)return;const n=Number(value);if(!Number.isFinite(n)||n<0){status("予算は0以上の数字で入力してね。",true);return;}localStorage.setItem("futari-budget",String(Math.round(n)));render();}
 
-  // 未清算の立替のみをドロップダウンに表示
   function updateParentOptions() {
     const kind = $("kind").value;
     const parentSelect = $("parentId");
@@ -196,7 +196,6 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     if (kind === "partner_repaid" || kind === "you_repaid") {
       $("parentField").classList.remove("hidden");
       const targetKind = kind === "partner_repaid" ? "you_paid" : "partner_paid";
-      // 未清算の立替のみ抽出
       const unsettledTargetEntries = entries.filter(e => e.kind === targetKind && !e.is_settled);
 
       unsettledTargetEntries.forEach(e => {
@@ -215,19 +214,18 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     setMonthLabel();
     const monthEntries=entries.filter(e=>monthKey(e.entry_date)===monthKey(`${month.getFullYear()}-${String(month.getMonth()+1).padStart(2,"0")}`));
     
-    // 【重要】清算されていない（is_settled === false）立替のみを集計
+    // 【1】今月の全支出（清算済みかどうかにかかわらず、純粋な支出すべてを集計）
+    const allSpends = monthEntries.filter(e => e.kind === "you_paid" || e.kind === "partner_paid");
+    const total = allSpends.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+    // 【2】未清算の立替のみを集計（二番目のカード用）
     const unsettledSpends = monthEntries.filter(e => !e.is_settled && (e.kind === "you_paid" || e.kind === "partner_paid"));
-    
-    const youPaid = unsettledSpends.filter(e => e.kind === "you_paid").reduce((s, e) => s + Number(e.amount || 0), 0);
-    const partnerPaid = unsettledSpends.filter(e => e.kind === "partner_paid").reduce((s, e) => s + Number(e.amount || 0), 0);
+    const mine = unsettledSpends.filter(e => e.kind === "you_paid").reduce((s, e) => s + Number(e.amount || 0), 0);
+    const partner = unsettledSpends.filter(e => e.kind === "partner_paid").reduce((s, e) => s + Number(e.amount || 0), 0);
 
-    const total = youPaid + partnerPaid;
-    const mine = youPaid;
-    const partner = partnerPaid;
-
-    // 未精算分の差額（割り勘時の受け渡し額）
+    // 【3】未清算分の差額（三番目のカード用）
     const diff = mine - partner;
-    if (total === 0 || Math.abs(diff) < 1) {
+    if (unsettledSpends.length === 0 || Math.abs(diff) < 1) {
       $("settleText").textContent = "未精算の立替はありません！🎉";
     } else if (diff > 0) {
       $("settleText").textContent = `ひまりちゃんが ゆうすけくんに ${yen(diff / 2)} 渡すと半々！`;
@@ -235,6 +233,7 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
       $("settleText").textContent = `ゆうすけくんが ひまりちゃんに ${yen(-diff / 2)} 渡すと半々！`;
     }
 
+    // 予算とプログレスバーは「今月の全支出」に基づいて計算
     const budget = getBudget(), remaining = budget - total;
     $("total").textContent = yen(total);
     $("mine").textContent = yen(mine);
@@ -303,7 +302,6 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     if (pId) {
       const parent = entries.find(x => x.id === pId);
       if (parent && !$("amount").value) {
-        // 半額（割り勘）の金額を自動設定
         $("amount").value = Math.round(parent.amount / 2);
       }
     }
@@ -332,11 +330,9 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
 
     $("saveBtn").disabled=true;status("記録を保存中… 🐾");
     try{
-      // 返済を登録する場合
       const result = editingId ? await supabase.from("ledger_entries").update(payload).eq("id",editingId) : await supabase.from("ledger_entries").insert(payload);
       if(result.error) throw result.error;
 
-      // 親記録（元の立替）がある場合は【清算済み】に更新する
       if (parentId) {
         const { error: parentErr } = await supabase.from("ledger_entries").update({ is_settled: true }).eq("id", parentId);
         if (parentErr) throw parentErr;
