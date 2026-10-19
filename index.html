@@ -49,9 +49,6 @@ h1{font-size:clamp(23px,5vw,31px);letter-spacing:.04em;margin:0;color:var(--pink
 .paw{position:absolute;right:14px;top:67px;opacity:.42;font-size:22px}
 .person-total{font-size:clamp(22px,5.8vw,32px);font-weight:850;color:var(--pink-dark);margin-top:13px;letter-spacing:-.03em;white-space:nowrap}
 .person-card:after{content:"";position:absolute;width:100px;height:60px;right:-35px;bottom:-35px;background:#fff0f5;border-radius:50%}
-.settle-card{background:linear-gradient(135deg, #fff5f8, #ffeef3);border:1px solid #f9d8e4;text-align:center;padding:15px;border-radius:20px;margin-bottom:15px;}
-.settle-title{font-size:12px;font-weight:700;color:var(--pink-dark);margin-bottom:4px;}
-.settle-text{font-size:15px;font-weight:850;color:#8a405c;}
 .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
 .section-title h2{font-size:18px;margin:0;color:var(--pink-dark)}
 .text-btn{border:0;background:transparent;color:var(--pink);font-size:12px;font-weight:700;padding:5px}
@@ -74,6 +71,9 @@ h1{font-size:clamp(23px,5vw,31px);letter-spacing:.04em;margin:0;color:var(--pink
 label{display:block;font-size:12px;font-weight:750;color:#a7798f;margin-bottom:6px}
 input,select{width:100%;border:1px solid #f0d6e1;background:#fffafd;border-radius:13px;padding:12px;color:var(--ink);outline:none}
 input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
+.preset-btns{display:flex;gap:8px;margin-top:6px}
+.preset-btn{border:1px solid #f0d6e1;background:#fff0f5;color:var(--pink-dark);border-radius:10px;padding:6px 12px;font-size:12px;font-weight:750;flex:1;transition:all .15s}
+.preset-btn:active{background:var(--pink);color:#fff}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .primary{border:0;border-radius:15px;background:linear-gradient(100deg,#e58caf,#cf6590);color:white;font-weight:800;padding:14px 16px;width:100%;box-shadow:0 5px 12px #cf659025}
 .secondary{border:0;border-radius:12px;background:#fff0f5;color:#a86682;font-weight:750;padding:10px 13px}
@@ -103,7 +103,6 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     <span>🐾 ふたりの家計</span>
   </div>
 
-  <!-- 一番上のカード：清算問わず、今月ふたりで使った全額を表示 -->
   <section class="card total-card">
     <div class="card-heading"><div><div class="eyebrow">💗 今月の合計支出</div><div class="month-caption" id="monthCaption">今月もたのしく記録しよう</div></div><span class="calendar">🗓️</span></div>
     <div class="total" id="total">¥0</div>
@@ -111,22 +110,15 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     <div class="budget-row"><span id="budgetText">予算 ¥40,000</span><span id="remainingText">残り ¥40,000</span></div>
   </section>
 
-  <!-- 二番目のカード：現在まだ清算されていない金額だけを表示 -->
   <section class="pair-grid">
     <div class="card person-card"><div class="person-top"><div class="animal">🐶</div><div><div class="person-name" id="myLabel">ゆうすけくん</div><div class="person-caption">未清算の立替</div></div></div><span class="paw">🐾</span><div class="person-total" id="mine">¥0</div></div>
     <div class="card person-card"><div class="person-top"><div class="animal">🐱</div><div><div class="person-name" id="partnerLabel">ひまりちゃん</div><div class="person-caption">未清算の立替</div></div></div><span class="paw">🐾</span><div class="person-total" id="partner">¥0</div></div>
   </section>
 
-  <!-- 三番目のカード：未清算分をイーブンにする案内 -->
-  <div class="settle-card">
-    <div class="settle-title">⚖️ 未精算分をイーブン（半々）にするには？</div>
-    <div class="settle-text" id="settleText">未精算の立替はありません！🎉</div>
-  </div>
-
   <section class="card">
     <div class="section-title"><h2>♡ 最近の記録</h2><button class="text-btn" id="showAll">すべて見る ›</button></div>
     <div id="entries" class="entries"><div class="empty">まだ記録がないよ 🐾<br>最初の思い出を追加してみよう！</div></div>
-    <div class="notice">※ 返済を記録すると、対象の立替が「清算済み 🌸」になり精算カードから除外されます。</div>
+    <div class="notice">※ 返済を記録すると、対象の立替が「清算済み 🌸」になり未清算一覧から除外されます。</div>
   </section>
 
   <section class="card form-card" id="formSection">
@@ -144,8 +136,19 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
         <select id="parentId"><option value="">選択してください</option></select>
       </div>
 
-      <div class="two-col"><div class="field"><label for="amount">金額（円）</label><input id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="例：2800" required></div>
-      <div class="field"><label for="entryDate">日付</label><input id="entryDate" type="date" required></div></div>
+      <div class="two-col">
+        <div class="field">
+          <label for="amount">金額（円）</label>
+          <input id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="例：2800" required>
+          <!-- 全額・半額ワンタップボタン -->
+          <div class="preset-btns hidden" id="presetBtns">
+            <button type="button" class="preset-btn" id="btnHalf">半額 (¥0)</button>
+            <button type="button" class="preset-btn" id="btnFull">全額 (¥0)</button>
+          </div>
+        </div>
+        <div class="field"><label for="entryDate">日付</label><input id="entryDate" type="date" required></div>
+      </div>
+      
       <div class="field"><label for="note">メモ（任意）</label><input id="note" type="text" maxlength="180" placeholder="例：寿司代、カフェ、デート代"></div>
       <button class="primary" id="saveBtn" type="submit">＋ ふたりの記録に追加</button>
       <button class="secondary hidden" id="cancelEdit" type="button" style="width:100%;margin-top:8px">編集をキャンセル</button>
@@ -172,6 +175,8 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     && SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_PROJECT")
     && SUPABASE_ANON_KEY.length > 20 && !SUPABASE_ANON_KEY.includes("PASTE_");
   let supabase = null, entries = [], editingId = null, showAll = false;
+  let currentParentAmount = 0; // 選択された親立替の金額
+
   const now = new Date(); let month = new Date(now.getFullYear(), now.getMonth(), 1);
   const kinds = {
     you_paid:{label:"ゆうすけくんが払った",icon:"🐶"},
@@ -201,11 +206,12 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
       unsettledTargetEntries.forEach(e => {
         const opt = document.createElement("option");
         opt.value = e.id;
-        opt.textContent = `${e.entry_date} ${e.note || kinds[e.kind].label} (全額 ¥${Number(e.amount).toLocaleString()})`;
+        opt.textContent = `${e.entry_date} ${e.note || kinds[e.kind].label} (¥${Number(e.amount).toLocaleString()})`;
         parentSelect.appendChild(opt);
       });
     } else {
       $("parentField").classList.add("hidden");
+      $("presetBtns").classList.add("hidden");
       parentSelect.value = "";
     }
   }
@@ -214,26 +220,15 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     setMonthLabel();
     const monthEntries=entries.filter(e=>monthKey(e.entry_date)===monthKey(`${month.getFullYear()}-${String(month.getMonth()+1).padStart(2,"0")}`));
     
-    // 【1】今月の全支出（清算済みかどうかにかかわらず、純粋な支出すべてを集計）
+    // 今月の全支出
     const allSpends = monthEntries.filter(e => e.kind === "you_paid" || e.kind === "partner_paid");
     const total = allSpends.reduce((s, e) => s + Number(e.amount || 0), 0);
 
-    // 【2】未清算の立替のみを集計（二番目のカード用）
+    // 未清算の立替のみ集計
     const unsettledSpends = monthEntries.filter(e => !e.is_settled && (e.kind === "you_paid" || e.kind === "partner_paid"));
     const mine = unsettledSpends.filter(e => e.kind === "you_paid").reduce((s, e) => s + Number(e.amount || 0), 0);
     const partner = unsettledSpends.filter(e => e.kind === "partner_paid").reduce((s, e) => s + Number(e.amount || 0), 0);
 
-    // 【3】未清算分の差額（三番目のカード用）
-    const diff = mine - partner;
-    if (unsettledSpends.length === 0 || Math.abs(diff) < 1) {
-      $("settleText").textContent = "未精算の立替はありません！🎉";
-    } else if (diff > 0) {
-      $("settleText").textContent = `ひまりちゃんが ゆうすけくんに ${yen(diff / 2)} 渡すと半々！`;
-    } else {
-      $("settleText").textContent = `ゆうすけくんが ひまりちゃんに ${yen(-diff / 2)} 渡すと半々！`;
-    }
-
-    // 予算とプログレスバーは「今月の全支出」に基づいて計算
     const budget = getBudget(), remaining = budget - total;
     $("total").textContent = yen(total);
     $("mine").textContent = yen(mine);
@@ -276,11 +271,13 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
 
   function resetForm(){
     editingId=null;
+    currentParentAmount=0;
     $("entryForm").reset();
     $("entryDate").value=localDate();
     $("formTitle").textContent="🐾 記録を追加";
     $("saveBtn").textContent="＋ ふたりの記録に追加";
     $("cancelEdit").classList.add("hidden");
+    $("presetBtns").classList.add("hidden");
     updateParentOptions();
   }
 
@@ -297,14 +294,35 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   }
 
   $("kind").addEventListener("change", updateParentOptions);
+  
+  // 返済対象が選ばれた時に全額・半額ボタンを表示
   $("parentId").addEventListener("change", ev => {
     const pId = ev.target.value;
     if (pId) {
       const parent = entries.find(x => x.id === pId);
-      if (parent && !$("amount").value) {
-        $("amount").value = Math.round(parent.amount / 2);
+      if (parent) {
+        currentParentAmount = parent.amount;
+        const half = Math.round(currentParentAmount / 2);
+        
+        $("btnHalf").textContent = `半額 (${yen(half)})`;
+        $("btnFull").textContent = `全額 (${yen(currentParentAmount)})`;
+        $("presetBtns").classList.remove("hidden");
+        
+        // デフォルトで半額をセット
+        $("amount").value = half;
       }
+    } else {
+      $("presetBtns").classList.add("hidden");
+      currentParentAmount = 0;
     }
+  });
+
+  // ワンタップボタン処理
+  $("btnHalf").addEventListener("click", () => {
+    if (currentParentAmount) $("amount").value = Math.round(currentParentAmount / 2);
+  });
+  $("btnFull").addEventListener("click", () => {
+    if (currentParentAmount) $("amount").value = currentParentAmount;
   });
 
   $("entryDate").value=localDate();
