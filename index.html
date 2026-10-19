@@ -49,6 +49,9 @@ h1{font-size:clamp(23px,5vw,31px);letter-spacing:.04em;margin:0;color:var(--pink
 .paw{position:absolute;right:14px;top:67px;opacity:.42;font-size:22px}
 .person-total{font-size:clamp(22px,5.8vw,32px);font-weight:850;color:var(--pink-dark);margin-top:13px;letter-spacing:-.03em;white-space:nowrap}
 .person-card:after{content:"";position:absolute;width:100px;height:60px;right:-35px;bottom:-35px;background:#fff0f5;border-radius:50%}
+.settle-card{background:linear-gradient(135deg, #fff5f8, #ffeef3);border:1px solid #f9d8e4;text-align:center;padding:15px;border-radius:20px;margin-bottom:15px;}
+.settle-title{font-size:12px;font-weight:700;color:var(--pink-dark);margin-bottom:4px;}
+.settle-text{font-size:15px;font-weight:850;color:#8a405c;}
 .section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
 .section-title h2{font-size:18px;margin:0;color:var(--pink-dark)}
 .text-btn{border:0;background:transparent;color:var(--pink);font-size:12px;font-weight:700;padding:5px}
@@ -105,14 +108,20 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   </section>
 
   <section class="pair-grid">
-    <div class="card person-card"><div class="person-top"><div class="animal">🐶</div><div><div class="person-name" id="myLabel">ゆうすけくん（犬）</div><div class="person-caption">今月の実質負担</div></div></div><span class="paw">🐾</span><div class="person-total" id="mine">¥0</div></div>
-    <div class="card person-card"><div class="person-top"><div class="animal">🐱</div><div><div class="person-name" id="partnerLabel">ひまりちゃん（猫）</div><div class="person-caption">今月の実質負担</div></div></div><span class="paw">🐾</span><div class="person-total" id="partner">¥0</div></div>
+    <div class="card person-card"><div class="person-top"><div class="animal">🐶</div><div><div class="person-name" id="myLabel">ゆうすけくん</div><div class="person-caption">今月の実際の負担</div></div></div><span class="paw">🐾</span><div class="person-total" id="mine">¥0</div></div>
+    <div class="card person-card"><div class="person-top"><div class="animal">🐱</div><div><div class="person-name" id="partnerLabel">ひまりちゃん</div><div class="person-caption">今月の実際の負担</div></div></div><span class="paw">🐾</span><div class="person-total" id="partner">¥0</div></div>
   </section>
+
+  <!-- 精算状況カード -->
+  <div class="settle-card">
+    <div class="settle-title">⚖️ イーブン（半々）にするには？</div>
+    <div class="settle-text" id="settleText">ふたりの負担額はぴったり半々です！🎉</div>
+  </div>
 
   <section class="card">
     <div class="section-title"><h2>♡ 最近の記録</h2><button class="text-btn" id="showAll">すべて見る ›</button></div>
     <div id="entries" class="entries"><div class="empty">まだ記録がないよ 🐾<br>最初の思い出を追加してみよう！</div></div>
-    <div class="notice">※ 記録した内容はふたりのお財布に反映されるよ。返済・貸し借りの記録も追加できます。</div>
+    <div class="notice">※ 返済を記録すると、お互いの負担額と精算額が自動で計算・調整されます。</div>
   </section>
 
   <section class="card form-card" id="formSection">
@@ -121,8 +130,8 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
       <div class="field"><label for="kind">どんな記録？</label><select id="kind" required>
         <option value="you_paid">🐶 ゆうすけくんが立て替え・払った</option>
         <option value="partner_paid">🐱 ひまりちゃんが立て替え・払った</option>
-        <option value="partner_repaid">🐱 ひまりちゃんから返済された</option>
-        <option value="you_repaid">🐶 ゆうすけくんが返済した</option>
+        <option value="partner_repaid">🐱 ひまりちゃん ➔ ゆうすけくんへ返済</option>
+        <option value="you_repaid">🐶 ゆうすけくん ➔ ひまりちゃんへ返済</option>
       </select></div>
       <div class="two-col"><div class="field"><label for="amount">金額（円）</label><input id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="例：2800" required></div>
       <div class="field"><label for="entryDate">日付</label><input id="entryDate" type="date" required></div></div>
@@ -156,8 +165,8 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   const kinds = {
     you_paid:{label:"ゆうすけくんが払った",icon:"🐶"},
     partner_paid:{label:"ひまりちゃんが払った",icon:"🐱"},
-    partner_repaid:{label:"ひまりちゃんから返済",icon:"🐱"},
-    you_repaid:{label:"ゆうすけくんが返済",icon:"🐶"}
+    partner_repaid:{label:"ひまりちゃん ➔ ゆうすけくん 返済",icon:"🐱"},
+    you_repaid:{label:"ゆうすけくん ➔ ひまりちゃん 返済",icon:"🐶"}
   };
   const yen = n => "¥" + Math.round(Math.abs(Number(n)||0)).toLocaleString("ja-JP");
   const localDate = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
@@ -177,17 +186,29 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     const partnerRepaid = monthEntries.filter(e=>e.kind==="partner_repaid").reduce((s,e)=>s+Number(e.amount||0),0);
     const youRepaid = monthEntries.filter(e=>e.kind==="you_repaid").reduce((s,e)=>s+Number(e.amount||0),0);
 
-    // ふたりの合計支出（全体の純粋な支出額）
+    // ふたりの合計支出
     const total = youPaid + partnerPaid;
 
-    // 実質負担額の計算（返済があれば支払った側が減り、返済した側が増える）
+    // 実際の負担額の計算
     const mine = youPaid - partnerRepaid + youRepaid;
     const partner = partnerPaid - youRepaid + partnerRepaid;
 
+    // 精算額の計算（差額の半分を払うと半々になる）
+    const diff = mine - partner;
+    if (Math.abs(diff) < 1) {
+      $("settleText").textContent = "ふたりの負担額はぴったり半々です！🎉";
+    } else if (diff > 0) {
+      // ゆうすけくんの方が多く払っている場合
+      $("settleText").textContent = `ひまりちゃんが ゆうすけくんに ${yen(diff / 2)} 渡すと半々！`;
+    } else {
+      // ひまりちゃんの方が多く払っている場合
+      $("settleText").textContent = `ゆうすけくんが ひまりちゃんに ${yen(-diff / 2)} 渡すと半々！`;
+    }
+
     const budget = getBudget(), remaining = budget - total;
     $("total").textContent = yen(total);
-    $("mine").textContent = (mine < 0 ? "-" : "") + yen(mine);
-    $("partner").textContent = (partner < 0 ? "-" : "") + yen(partner);
+    $("mine").textContent = yen(mine);
+    $("partner").textContent = yen(partner);
     $("budgetText").textContent = `予算 ${yen(budget)}`;
     $("remainingText").textContent = remaining >= 0 ? `残り ${yen(remaining)}` : `予算オーバー ${yen(-remaining)}`;
     $("progress").style.width = (budget ? Math.min(100, total / budget * 100) : total ? 100 : 0) + "%";
@@ -204,13 +225,8 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
       const k = kinds[e.kind];
       if(!k) return "";
       const date = String(e.entry_date||"").replaceAll("-","/");
-      
-      // 履歴一覧の表示スタイル
-      let sign = "";
-      if (e.kind === "partner_repaid") sign = "+"; // 返済された（受け取った）
-      if (e.kind === "you_repaid") sign = "−";     // 返済した（払った）
 
-      return `<div class="entry"><div class="entry-avatar">${k.icon}</div><div class="entry-main"><div class="entry-title">${esc(e.note||k.label)}</div><div class="entry-meta">${esc(date)} · ${esc(k.label)}</div></div><div><div class="entry-amount">${sign}${yen(e.amount)}</div><div class="entry-controls"><button class="tiny" data-edit="${esc(e.id)}">編集</button><button class="tiny" data-delete="${esc(e.id)}">削除</button></div></div></div>`;
+      return `<div class="entry"><div class="entry-avatar">${k.icon}</div><div class="entry-main"><div class="entry-title">${esc(e.note||k.label)}</div><div class="entry-meta">${esc(date)} · ${esc(k.label)}</div></div><div><div class="entry-amount">${yen(e.amount)}</div><div class="entry-controls"><button class="tiny" data-edit="${esc(e.id)}">編集</button><button class="tiny" data-delete="${esc(e.id)}">削除</button></div></div></div>`;
     }).join("");
 
     $("showAll").textContent = showAll ? "閉じる ↑" : "すべて見る ›";
