@@ -121,7 +121,7 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   <section class="card">
     <div class="section-title"><h2>♡ 最近の記録</h2><button class="text-btn" id="showAll">すべて見る ›</button></div>
     <div id="entries" class="entries"><div class="empty">まだ記録がないよ 🐾<br>最初の思い出を追加してみよう！</div></div>
-    <div class="notice">※ 返済を記録すると、お互いの負担額と精算額が自動で計算・調整されます。</div>
+    <div class="notice">※ 返済を記録すると、どの立替の返済かが紐付けられてお互いの負担額が調整されます。</div>
   </section>
 
   <section class="card form-card" id="formSection">
@@ -133,9 +133,16 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
         <option value="partner_repaid">🐱 ひまりちゃん ➔ ゆうすけくんへ返済</option>
         <option value="you_repaid">🐶 ゆうすけくん ➔ ひまりちゃんへ返済</option>
       </select></div>
+      
+      <!-- 親記録（どの立替の返済か）を選ぶ選択肢 -->
+      <div class="field hidden" id="parentField">
+        <label for="parentId">どの立替に対する返済？（任意）</label>
+        <select id="parentId"><option value="">指定しない（まとめ返済など）</option></select>
+      </div>
+
       <div class="two-col"><div class="field"><label for="amount">金額（円）</label><input id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="例：2800" required></div>
       <div class="field"><label for="entryDate">日付</label><input id="entryDate" type="date" required></div></div>
-      <div class="field"><label for="note">メモ（任意）</label><input id="note" type="text" maxlength="180" placeholder="例：ランチ代、カフェ、デート代"></div>
+      <div class="field"><label for="note">メモ（任意）</label><input id="note" type="text" maxlength="180" placeholder="例：寿司代、カフェ、デート代"></div>
       <button class="primary" id="saveBtn" type="submit">＋ ふたりの記録に追加</button>
       <button class="secondary hidden" id="cancelEdit" type="button" style="width:100%;margin-top:8px">編集をキャンセル</button>
     </form>
@@ -176,32 +183,51 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   function setMonthLabel(){ $("monthLabel").textContent=`${month.getFullYear()}年${month.getMonth()+1}月`; $("monthCaption").textContent=`${month.getFullYear()}年${month.getMonth()+1}月のふたりの家計`; }
   function getBudget(){return Math.max(0,Number(localStorage.getItem("futari-budget")||40000)||0);}
   function setBudget(){const value=prompt("今月の予算を入力してね（円）",String(getBudget()));if(value===null)return;const n=Number(value);if(!Number.isFinite(n)||n<0){status("予算は0以上の数字で入力してね。",true);return;}localStorage.setItem("futari-budget",String(Math.round(n)));render();}
+
+  // 返済対象ドロップダウンの更新
+  function updateParentOptions() {
+    const kind = $("kind").value;
+    const parentSelect = $("parentId");
+    parentSelect.innerHTML = '<option value="">指定しない（まとめ返済など）</option>';
+
+    if (kind === "partner_repaid" || kind === "you_repaid") {
+      $("parentField").classList.remove("hidden");
+      // 返済対象となる立替（ひまりちゃん返済なら「ゆうすけくんが払った記録」、逆ならその逆）
+      const targetKind = kind === "partner_repaid" ? "you_paid" : "partner_paid";
+      const targetEntries = entries.filter(e => e.kind === targetKind);
+
+      targetEntries.forEach(e => {
+        const opt = document.createElement("option");
+        opt.value = e.id;
+        opt.textContent = `${e.entry_date} ${e.note || kinds[e.kind].label} (¥${Number(e.amount).toLocaleString()})`;
+        parentSelect.appendChild(opt);
+      });
+    } else {
+      $("parentField").classList.add("hidden");
+      parentSelect.value = "";
+    }
+  }
+
   function render(){
     setMonthLabel();
     const monthEntries=entries.filter(e=>monthKey(e.entry_date)===monthKey(`${month.getFullYear()}-${String(month.getMonth()+1).padStart(2,"0")}`));
     
-    // 各項目の集計
+    // 集計
     const youPaid = monthEntries.filter(e=>e.kind==="you_paid").reduce((s,e)=>s+Number(e.amount||0),0);
     const partnerPaid = monthEntries.filter(e=>e.kind==="partner_paid").reduce((s,e)=>s+Number(e.amount||0),0);
     const partnerRepaid = monthEntries.filter(e=>e.kind==="partner_repaid").reduce((s,e)=>s+Number(e.amount||0),0);
     const youRepaid = monthEntries.filter(e=>e.kind==="you_repaid").reduce((s,e)=>s+Number(e.amount||0),0);
 
-    // ふたりの合計支出
     const total = youPaid + partnerPaid;
-
-    // 実際の負担額の計算
     const mine = youPaid - partnerRepaid + youRepaid;
     const partner = partnerPaid - youRepaid + partnerRepaid;
 
-    // 精算額の計算（差額の半分を払うと半々になる）
     const diff = mine - partner;
     if (Math.abs(diff) < 1) {
       $("settleText").textContent = "ふたりの負担額はぴったり半々です！🎉";
     } else if (diff > 0) {
-      // ゆうすけくんの方が多く払っている場合
       $("settleText").textContent = `ひまりちゃんが ゆうすけくんに ${yen(diff / 2)} 渡すと半々！`;
     } else {
-      // ひまりちゃんの方が多く払っている場合
       $("settleText").textContent = `ゆうすけくんが ひまりちゃんに ${yen(-diff / 2)} 渡すと半々！`;
     }
 
@@ -225,33 +251,107 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
       const k = kinds[e.kind];
       if(!k) return "";
       const date = String(e.entry_date||"").replaceAll("-","/");
+      
+      // 親記録のメモ（どの返済か）を取得
+      let parentNote = "";
+      if (e.parent_id) {
+        const parent = entries.find(p => p.id === e.parent_id);
+        if (parent) parentNote = ` ➔ 「${parent.note || kinds[parent.kind].label}」の返済`;
+      }
 
-      return `<div class="entry"><div class="entry-avatar">${k.icon}</div><div class="entry-main"><div class="entry-title">${esc(e.note||k.label)}</div><div class="entry-meta">${esc(date)} · ${esc(k.label)}</div></div><div><div class="entry-amount">${yen(e.amount)}</div><div class="entry-controls"><button class="tiny" data-edit="${esc(e.id)}">編集</button><button class="tiny" data-delete="${esc(e.id)}">削除</button></div></div></div>`;
+      return `<div class="entry"><div class="entry-avatar">${k.icon}</div><div class="entry-main"><div class="entry-title">${esc(e.note||k.label)}${esc(parentNote)}</div><div class="entry-meta">${esc(date)} · ${esc(k.label)}</div></div><div><div class="entry-amount">${yen(e.amount)}</div><div class="entry-controls"><button class="tiny" data-edit="${esc(e.id)}">編集</button><button class="tiny" data-delete="${esc(e.id)}">削除</button></div></div></div>`;
     }).join("");
 
     $("showAll").textContent = showAll ? "閉じる ↑" : "すべて見る ›";
   }
-  function resetForm(){editingId=null;$("entryForm").reset();$("entryDate").value=localDate();$("formTitle").textContent="🐾 記録を追加";$("saveBtn").textContent="＋ ふたりの記録に追加";$("cancelEdit").classList.add("hidden");}
+
+  function resetForm(){
+    editingId=null;
+    $("entryForm").reset();
+    $("entryDate").value=localDate();
+    $("formTitle").textContent="🐾 記録を追加";
+    $("saveBtn").textContent="＋ ふたりの記録に追加";
+    $("cancelEdit").classList.add("hidden");
+    updateParentOptions();
+  }
+
   async function load(){
     if(!supabase){$("entries").innerHTML='<div class="empty">Supabaseの設定を確認してね 🐾</div>';status("config.js のURL・キーを設定すると、ふたりで同じ記録を見られます。",true);return;}
-    try{const {data,error}=await supabase.from("ledger_entries").select("*").order("entry_date",{ascending:false}).order("created_at",{ascending:false});if(error)throw error;entries=data||[];render();status("ふたりのお財布に接続中 ♡");}
-    catch(e){status("読み込みに失敗しました："+e.message,true);$("entries").innerHTML='<div class="empty">接続設定とSupabaseのSQLを確認してね。</div>';}
+    try{
+      const {data,error}=await supabase.from("ledger_entries").select("*").order("entry_date",{ascending:false}).order("created_at",{ascending:false});
+      if(error)throw error;
+      entries=data||[];
+      updateParentOptions();
+      render();
+      status("ふたりのお財布に接続中 ♡");
+    } catch(e){status("読み込みに失敗しました："+e.message,true);$("entries").innerHTML='<div class="empty">接続設定とSupabaseのSQLを確認してね。</div>';}
   }
+
+  $("kind").addEventListener("change", updateParentOptions);
+  $("parentId").addEventListener("change", ev => {
+    // 紐付け対象が選ばれたら、半額（割り勘額）を自動で入力補助
+    const pId = ev.target.value;
+    if (pId) {
+      const parent = entries.find(x => x.id === pId);
+      if (parent && !$("amount").value) {
+        $("amount").value = Math.round(parent.amount / 2);
+      }
+    }
+  });
+
   $("entryDate").value=localDate();
   $("entryForm").addEventListener("submit",async ev=>{
     ev.preventDefault();if(!supabase){status("先にconfig.jsとSupabaseの設定を確認してね。",true);return;}
     const amount=Number($("amount").value);if(!Number.isSafeInteger(amount)||amount<1){status("金額は1円以上で入力してね。",true);return;}
-    const payload={kind:$("kind").value,amount,entry_date:$("entryDate").value,note:$("note").value.trim()};
+    
+    const payload={
+      kind:$("kind").value,
+      amount,
+      entry_date:$("entryDate").value,
+      note:$("note").value.trim(),
+      parent_id:$("parentId").value || null
+    };
+
     $("saveBtn").disabled=true;status("記録を保存中… 🐾");
-    try{const result=editingId?await supabase.from("ledger_entries").update(payload).eq("id",editingId):await supabase.from("ledger_entries").insert(payload);if(result.error)throw result.error;resetForm();await load();status("保存できたよ！ 🐶♡🐱");}
-    catch(e){status("保存に失敗しました："+e.message,true);}finally{$("saveBtn").disabled=false;}
+    try{
+      const result=editingId?await supabase.from("ledger_entries").update(payload).eq("id",editingId):await supabase.from("ledger_entries").insert(payload);
+      if(result.error)throw result.error;
+      resetForm();
+      await load();
+      status("保存できたよ！ 🐶♡🐱");
+    } catch(e){status("保存に失敗しました："+e.message,true);}finally{$("saveBtn").disabled=false;}
   });
+
   $("cancelEdit").addEventListener("click",resetForm);
   $("entries").addEventListener("click",async ev=>{
     const edit=ev.target.closest("[data-edit]"),del=ev.target.closest("[data-delete]");
-    if(edit){const e=entries.find(x=>String(x.id)===edit.dataset.edit);if(!e)return;editingId=e.id;$("kind").value=e.kind;$("amount").value=e.amount;$("entryDate").value=e.entry_date;$("note").value=e.note||"";$("formTitle").textContent="🐾 記録を編集";$("saveBtn").textContent="変更を保存";$("cancelEdit").classList.remove("hidden");$("formSection").scrollIntoView({behavior:"smooth"});}
-    if(del){const e=entries.find(x=>String(x.id)===del.dataset.delete);if(!e||!confirm("この記録を削除する？ 🥺"))return;try{const {error}=await supabase.from("ledger_entries").delete().eq("id",e.id);if(error)throw error;await load();status("記録を削除したよ。");}catch(err){status("削除に失敗しました："+err.message,true);}}
+    if(edit){
+      const e=entries.find(x=>String(x.id)===edit.dataset.edit);
+      if(!e)return;
+      editingId=e.id;
+      $("kind").value=e.kind;
+      updateParentOptions();
+      $("parentId").value=e.parent_id||"";
+      $("amount").value=e.amount;
+      $("entryDate").value=e.entry_date;
+      $("note").value=e.note||"";
+      $("formTitle").textContent="🐾 記録を編集";
+      $("saveBtn").textContent="変更を保存";
+      $("cancelEdit").classList.remove("hidden");
+      $("formSection").scrollIntoView({behavior:"smooth"});
+    }
+    if(del){
+      const e=entries.find(x=>String(x.id)===del.dataset.delete);
+      if(!e||!confirm("この記録を削除する？ 🥺"))return;
+      try{
+        const {error}=await supabase.from("ledger_entries").delete().eq("id",e.id);
+        if(error)throw error;
+        await load();
+        status("記録を削除したよ。");
+      } catch(err){status("削除に失敗しました："+err.message,true);}
+    }
   });
+
   $("prevMonth").addEventListener("click",()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);render();});
   $("nextMonth").addEventListener("click",()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);render();});
   $("showAll").addEventListener("click",()=>{showAll=!showAll;render();});
@@ -260,6 +360,7 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   $("homeNav").addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
   $("coupleNav").addEventListener("click",()=>document.querySelector(".pair-grid").scrollIntoView({behavior:"smooth",block:"center"}));
   $("settingsNav").addEventListener("click",setBudget);$("settingsJump").addEventListener("click",setBudget);
+
   if(configured&&window.supabase){supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);load();}
   else {render();status("config.js のSupabase URLとキーを設定してね。",true);}
 })();
