@@ -1,0 +1,13 @@
+{
+  "name": "ふたりの貸し借りメモ",
+  "short_name": "貸し借りメモ",
+  "description": "ふたりの貸し借り・立て替えを記録するメモ",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f6f2",
+  "theme_color": "#f7f6f2",
+  "icons": [
+    {"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}
+  ]
+}

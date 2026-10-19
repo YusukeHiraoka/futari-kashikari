@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff0f4">
+<meta name="description" content="犬のあなたと猫の彼女、ふたりのお財布">
+<title>ふたりのお財布 🐶🐱</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='85'%3E%F0%9F%92%97%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+ --bg:#fff1f5;--pink:#d66f96;--pink-dark:#99516d;--pink-soft:#fbe1e9;
+ --pink-pale:#fff8fa;--ink:#75566a;--muted:#b08b9c;--line:#f4dce5;
+ --white:#fff;--shadow:0 8px 26px rgba(170,91,122,.10);--green:#6c9b7a;--red:#c86d7d;
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 10% 0%,#ffe0e9 0,transparent 35%),var(--bg);
+ font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}
+.app{max-width:780px;margin:auto;padding:20px 15px 104px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:2px 2px 16px;position:relative;min-height:115px}
+.brand{display:flex;align-items:center;gap:10px;z-index:1}
+.brand-heart{font-size:35px;color:var(--pink);line-height:1}
+h1{font-size:clamp(23px,5vw,31px);letter-spacing:.04em;margin:0;color:var(--pink-dark)}
+.tagline{font-size:12px;color:#b47d94;margin-top:5px}
+.top-actions{display:flex;gap:7px;z-index:1}
+.icon-btn{border:0;background:#fff9;border-radius:50%;width:43px;height:43px;color:var(--pink-dark);box-shadow:0 3px 12px #c76c8c12;font-size:19px}
+.couple{position:absolute;right:45px;bottom:-6px;font-size:clamp(47px,12vw,76px);letter-spacing:-16px;filter:drop-shadow(0 5px 3px #bd7b8c20);user-select:none}
+.heart-float{position:absolute;right:17px;top:5px;color:#f1a3bb;font-size:20px}
+.month-row{display:flex;align-items:center;justify-content:space-between;margin:0 4px 11px;font-size:14px;color:var(--pink-dark)}
+.month-switch{display:flex;align-items:center;gap:15px}
+.month-switch button{border:0;background:#fff9;color:var(--pink-dark);width:30px;height:30px;border-radius:50%;font-size:22px}
+.card{background:rgba(255,255,255,.92);border:1px solid #fff;border-radius:25px;padding:20px;box-shadow:var(--shadow);margin-bottom:15px}
+.total-card{padding:21px 22px 20px;overflow:hidden;position:relative}
+.card-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.eyebrow{font-size:15px;font-weight:750;color:var(--pink-dark)}
+.month-caption{font-size:12px;color:var(--muted);margin-top:4px}
+.calendar{font-size:22px}
+.total{font-size:clamp(40px,10vw,56px);line-height:1.18;letter-spacing:-.04em;font-weight:850;color:var(--pink-dark);margin:19px 0 13px}
+.progress{height:12px;background:#f7dce6;border-radius:99px;overflow:hidden}
+.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#e78dad,#cc5f8b);border-radius:99px;transition:width .25s}
+.budget-row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;color:#a7778c;margin-top:10px}
+.pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.person-card{padding:17px 16px 15px;min-width:0;position:relative;overflow:hidden}
+.person-top{display:flex;align-items:center;gap:9px}
+.animal{width:49px;height:49px;display:grid;place-items:center;border-radius:50%;background:#ffedf2;font-size:31px;flex-shrink:0}
+.person-name{font-weight:800;font-size:15px;color:var(--pink-dark)}
+.person-caption{font-size:11px;color:var(--muted);margin-top:4px}
+.paw{position:absolute;right:14px;top:67px;opacity:.42;font-size:22px}
+.person-total{font-size:clamp(22px,5.8vw,32px);font-weight:850;color:var(--pink-dark);margin-top:13px;letter-spacing:-.03em;white-space:nowrap}
+.person-card:after{content:"";position:absolute;width:100px;height:60px;right:-35px;bottom:-35px;background:#fff0f5;border-radius:50%}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}
+.section-title h2{font-size:18px;margin:0;color:var(--pink-dark)}
+.text-btn{border:0;background:transparent;color:var(--pink);font-size:12px;font-weight:700;padding:5px}
+.entries{display:flex;flex-direction:column}
+.entry{display:flex;align-items:center;gap:11px;padding:13px 0;border-top:1px solid #f8e8ee}
+.entry:first-child{border-top:0;padding-top:2px}
+.entry-avatar{width:43px;height:43px;border-radius:50%;background:#ffedf2;display:grid;place-items:center;font-size:25px;flex-shrink:0}
+.entry-main{min-width:0;flex:1}
+.entry-title{font-size:13px;font-weight:800;color:#79596b;overflow-wrap:anywhere}
+.entry-meta{font-size:11px;color:#b59aaa;margin-top:4px}
+.entry-amount{font-size:15px;font-weight:850;color:var(--pink-dark);white-space:nowrap}
+.entry-controls{display:flex;gap:4px;margin-top:5px;justify-content:flex-end}
+.tiny{border:0;border-radius:8px;background:#fff0f5;color:#ae7189;font-size:10px;padding:4px 7px}
+.empty{text-align:center;padding:25px 8px;color:#ba9cac;font-size:13px;line-height:1.8}
+.form-card{scroll-margin-top:15px}
+.field{margin:0 0 12px}
+label{display:block;font-size:12px;font-weight:750;color:#a7798f;margin-bottom:6px}
+input,select{width:100%;border:1px solid #f0d6e1;background:#fffafd;border-radius:13px;padding:12px;color:var(--ink);outline:none}
+input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.primary{border:0;border-radius:15px;background:linear-gradient(100deg,#e58caf,#cf6590);color:white;font-weight:800;padding:14px 16px;width:100%;box-shadow:0 5px 12px #cf659025}
+.secondary{border:0;border-radius:12px;background:#fff0f5;color:#a86682;font-weight:750;padding:10px 13px}
+.status{font-size:12px;color:#a7798f;line-height:1.6;margin-top:9px;overflow-wrap:anywhere}.error{color:#c34f67}
+.notice{font-size:11px;color:#b28fa0;line-height:1.7;margin:12px 2px 0}
+.footer{text-align:center;color:#d17c9c;font-size:12px;font-weight:750;padding:5px 0 15px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:5;background:#fffafcf2;backdrop-filter:blur(12px);border-top:1px solid #f6e1e9;padding:9px max(12px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;align-items:center}
+.nav-item{border:0;background:transparent;color:#b08b9c;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;min-width:48px}
+.nav-icon{font-size:21px;line-height:1.2}
+.nav-item.active{color:var(--pink)}
+.add-nav{width:57px;height:57px;border-radius:50%;border:4px solid #fff;background:linear-gradient(140deg,#e98fb0,#cd5f8c);color:#fff;font-size:27px;box-shadow:0 4px 13px #cc628a40;margin-top:-27px}
+.hidden{display:none!important}
+@media(min-width:620px){.app{padding-left:22px;padding-right:22px}.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.total-card{margin-bottom:15px}.pair-grid{gap:15px}.card{padding:22px}.total-card{padding:23px 25px}}
+@media(max-width:390px){.app{padding:14px 10px 100px}.top{min-height:102px}.couple{right:38px;font-size:49px;letter-spacing:-13px}.brand-heart{font-size:29px}h1{font-size:22px}.card{padding:15px;border-radius:21px}.total-card{padding:18px}.person-card{padding:13px 11px}.animal{width:40px;height:40px;font-size:26px}.person-name{font-size:13px}.person-total{font-size:22px}.paw{right:10px;top:58px}.entry{gap:8px}.entry-avatar{width:38px;height:38px;font-size:22px}.entry-amount{font-size:13px}.two-col{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div class="brand"><div class="brand-heart">♡</div><div><h1>ふたりのお財布</h1><div class="tagline">一緒だから、もっと楽しく。</div></div></div>
+    <div class="top-actions"><button class="icon-btn" id="settingsJump" aria-label="設定">⚙</button></div>
+    <div class="couple" aria-label="犬と猫">🐶<span>🐱</span></div><div class="heart-float">♥</div>
+  </header>
+
+  <div class="month-row">
+    <div class="month-switch"><button id="prevMonth" aria-label="前の月">‹</button><strong id="monthLabel">2026年10月</strong><button id="nextMonth" aria-label="次の月">›</button></div>
+    <span>🐾 ふたりの家計</span>
+  </div>
+
+  <section class="card total-card">
+    <div class="card-heading"><div><div class="eyebrow">💗 今月の合計支出</div><div class="month-caption" id="monthCaption">今月もたのしく記録しよう</div></div><span class="calendar">🗓️</span></div>
+    <div class="total" id="total">¥0</div>
+    <div class="progress"><span id="progress"></span></div>
+    <div class="budget-row"><span id="budgetText">予算 ¥40,000</span><span id="remainingText">残り ¥40,000</span></div>
+  </section>
+
+  <section class="pair-grid">
+    <div class="card person-card"><div class="person-top"><div class="animal">🐶</div><div><div class="person-name" id="myLabel">あなた（犬）</div><div class="person-caption">今月のお支払い</div></div></div><span class="paw">🐾</span><div class="person-total" id="mine">¥0</div></div>
+    <div class="card person-card"><div class="person-top"><div class="animal">🐱</div><div><div class="person-name" id="partnerLabel">彼女（猫）</div><div class="person-caption">今月のお支払い</div></div></div><span class="paw">🐾</span><div class="person-total" id="partner">¥0</div></div>
+  </section>
+
+  <section class="card">
+    <div class="section-title"><h2>♡ 最近の記録</h2><button class="text-btn" id="showAll">すべて見る ›</button></div>
+    <div id="entries" class="entries"><div class="empty">まだ記録がないよ 🐾<br>最初の思い出を追加してみよう！</div></div>
+    <div class="notice">※ 記録した内容はふたりのお財布に反映されるよ。返済・貸し借りの記録も追加できます。</div>
+  </section>
+
+  <section class="card form-card" id="formSection">
+    <div class="section-title"><h2 id="formTitle">🐾 記録を追加</h2><span class="month-caption">金額は円で入力</span></div>
+    <form id="entryForm">
+      <div class="field"><label for="kind">どんな記録？</label><select id="kind" required>
+        <option value="you_paid">🐶 あなた（犬）が立て替え・払った</option>
+        <option value="partner_paid">🐱 彼女（猫）が立て替え・払った</option>
+        <option value="partner_repaid">🐱 彼女（猫）から返済された</option>
+        <option value="you_repaid">🐶 あなた（犬）が返済した</option>
+      </select></div>
+      <div class="two-col"><div class="field"><label for="amount">金額（円）</label><input id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="例：2800" required></div>
+      <div class="field"><label for="entryDate">日付</label><input id="entryDate" type="date" required></div></div>
+      <div class="field"><label for="note">メモ（任意）</label><input id="note" type="text" maxlength="180" placeholder="例：ランチ代、カフェ、デート代"></div>
+      <button class="primary" id="saveBtn" type="submit">＋ ふたりの記録に追加</button>
+      <button class="secondary hidden" id="cancelEdit" type="button" style="width:100%;margin-top:8px">編集をキャンセル</button>
+    </form>
+    <div id="status" class="status" role="status"></div>
+  </section>
+  <div class="footer">🐾 これからも、たくさんの思い出をつくろうね ♡ 🐾</div>
+</main>
+
+<nav class="bottom-nav" aria-label="メインメニュー">
+  <button class="nav-item active" id="homeNav"><span class="nav-icon">⌂</span><span>ホーム</span></button>
+  <button class="nav-item" id="historyNav"><span class="nav-icon">▤</span><span>履歴</span></button>
+  <button class="nav-item" id="addNav"><span class="nav-icon add-nav">🐾</span><span>追加</span></button>
+  <button class="nav-item" id="coupleNav"><span class="nav-icon">🐶♡🐱</span><span>ふたり</span></button>
+  <button class="nav-item" id="settingsNav"><span class="nav-icon">⚙</span><span>設定</span></button>
+</nav>
+
+<script src="./config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const configured = typeof SUPABASE_URL === "string" && typeof SUPABASE_ANON_KEY === "string"
+    && SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_PROJECT")
+    && SUPABASE_ANON_KEY.length > 20 && !SUPABASE_ANON_KEY.includes("PASTE_");
+  let supabase = null, entries = [], editingId = null, showAll = false;
+  const now = new Date(); let month = new Date(now.getFullYear(), now.getMonth(), 1);
+  const kinds = {
+    you_paid:{label:"あなた（犬）が払った",icon:"🐶",delta:1,side:"you",spend:true},
+    partner_paid:{label:"彼女（猫）が払った",icon:"🐱",delta:-1,side:"partner",spend:true},
+    partner_repaid:{label:"彼女（猫）から返済",icon:"🐱",delta:-1,side:"repayment",spend:false},
+    you_repaid:{label:"あなた（犬）が返済",icon:"🐶",delta:1,side:"repayment",spend:false}
+  };
+  const yen = n => "¥" + Math.round(Math.abs(Number(n)||0)).toLocaleString("ja-JP");
+  const localDate = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+  const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const monthKey = d => String(d||"").slice(0,7);
+  function status(msg,error=false){$("status").textContent=msg;$("status").classList.toggle("error",error);}
+  function setMonthLabel(){ $("monthLabel").textContent=`${month.getFullYear()}年${month.getMonth()+1}月`; $("monthCaption").textContent=`${month.getFullYear()}年${month.getMonth()+1}月のふたりの家計`; }
+  function getBudget(){return Math.max(0,Number(localStorage.getItem("futari-budget")||40000)||0);}
+  function setBudget(){const value=prompt("今月の予算を入力してね（円）",String(getBudget()));if(value===null)return;const n=Number(value);if(!Number.isFinite(n)||n<0){status("予算は0以上の数字で入力してね。",true);return;}localStorage.setItem("futari-budget",String(Math.round(n)));render();}
+  function render(){
+    setMonthLabel();
+    const monthEntries=entries.filter(e=>monthKey(e.entry_date)===monthKey(`${month.getFullYear()}-${String(month.getMonth()+1).padStart(2,"0")}`));
+    const spending=monthEntries.filter(e=>kinds[e.kind]?.spend);
+    const total=spending.reduce((s,e)=>s+Number(e.amount||0),0);
+    const mine=spending.filter(e=>e.kind==="you_paid").reduce((s,e)=>s+Number(e.amount||0),0);
+    const partner=spending.filter(e=>e.kind==="partner_paid").reduce((s,e)=>s+Number(e.amount||0),0);
+    const budget=getBudget(), remaining=budget-total;
+    $("total").textContent=yen(total);$("mine").textContent=yen(mine);$("partner").textContent=yen(partner);
+    $("budgetText").textContent=`予算 ${yen(budget)}`;$("remainingText").textContent=remaining>=0?`残り ${yen(remaining)}`:`予算オーバー ${yen(-remaining)}`;
+    $("progress").style.width=(budget?Math.min(100,total/budget*100):total?100:0)+"%";
+    const list=[...entries].sort((a,b)=>String(b.entry_date).localeCompare(String(a.entry_date))||String(b.created_at||"").localeCompare(String(a.created_at||"")));
+    const visible=showAll?list:list.slice(0,4);
+    if(!visible.length){$("entries").innerHTML='<div class="empty">まだ記録がないよ 🐾<br>最初の思い出を追加してみよう！</div>';return;}
+    $("entries").innerHTML=visible.map(e=>{
+      const k=kinds[e.kind];if(!k)return "";
+      const plus=k.delta>0, date=String(e.entry_date||"").replaceAll("-","/");
+      return `<div class="entry"><div class="entry-avatar">${k.icon}</div><div class="entry-main"><div class="entry-title">${esc(e.note||k.label)}</div><div class="entry-meta">${esc(date)} · ${esc(k.label)}</div></div><div><div class="entry-amount">${k.spend?yen(e.amount):(plus?"+":"−")+yen(e.amount)}</div><div class="entry-controls"><button class="tiny" data-edit="${esc(e.id)}">編集</button><button class="tiny" data-delete="${esc(e.id)}">削除</button></div></div></div>`;
+    }).join("");
+    $("showAll").textContent=showAll?"閉じる ↑":"すべて見る ›";
+  }
+  function resetForm(){editingId=null;$("entryForm").reset();$("entryDate").value=localDate();$("formTitle").textContent="🐾 記録を追加";$("saveBtn").textContent="＋ ふたりの記録に追加";$("cancelEdit").classList.add("hidden");}
+  async function load(){
+    if(!supabase){$("entries").innerHTML='<div class="empty">Supabaseの設定を確認してね 🐾</div>';status("config.js のURL・キーを設定すると、ふたりで同じ記録を見られます。",true);return;}
+    try{const {data,error}=await supabase.from("ledger_entries").select("*").order("entry_date",{ascending:false}).order("created_at",{ascending:false});if(error)throw error;entries=data||[];render();status("ふたりのお財布に接続中 ♡");}
+    catch(e){status("読み込みに失敗しました："+e.message,true);$("entries").innerHTML='<div class="empty">接続設定とSupabaseのSQLを確認してね。</div>';}
+  }
+  $("entryDate").value=localDate();
+  $("entryForm").addEventListener("submit",async ev=>{
+    ev.preventDefault();if(!supabase){status("先にconfig.jsとSupabaseの設定を確認してね。",true);return;}
+    const amount=Number($("amount").value);if(!Number.isSafeInteger(amount)||amount<1){status("金額は1円以上で入力してね。",true);return;}
+    const payload={kind:$("kind").value,amount,entry_date:$("entryDate").value,note:$("note").value.trim()};
+    $("saveBtn").disabled=true;status("記録を保存中… 🐾");
+    try{const result=editingId?await supabase.from("ledger_entries").update(payload).eq("id",editingId):await supabase.from("ledger_entries").insert(payload);if(result.error)throw result.error;resetForm();await load();status("保存できたよ！ 🐶♡🐱");}
+    catch(e){status("保存に失敗しました："+e.message,true);}finally{$("saveBtn").disabled=false;}
+  });
+  $("cancelEdit").addEventListener("click",resetForm);
+  $("entries").addEventListener("click",async ev=>{
+    const edit=ev.target.closest("[data-edit]"),del=ev.target.closest("[data-delete]");
+    if(edit){const e=entries.find(x=>String(x.id)===edit.dataset.edit);if(!e)return;editingId=e.id;$("kind").value=e.kind;$("amount").value=e.amount;$("entryDate").value=e.entry_date;$("note").value=e.note||"";$("formTitle").textContent="🐾 記録を編集";$("saveBtn").textContent="変更を保存";$("cancelEdit").classList.remove("hidden");$("formSection").scrollIntoView({behavior:"smooth"});}
+    if(del){const e=entries.find(x=>String(x.id)===del.dataset.delete);if(!e||!confirm("この記録を削除する？ 🥺"))return;try{const {error}=await supabase.from("ledger_entries").delete().eq("id",e.id);if(error)throw error;await load();status("記録を削除したよ。");}catch(err){status("削除に失敗しました："+err.message,true);}}
+  });
+  $("prevMonth").addEventListener("click",()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);render();});
+  $("nextMonth").addEventListener("click",()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);render();});
+  $("showAll").addEventListener("click",()=>{showAll=!showAll;render();});
+  $("addNav").addEventListener("click",()=>{$("formSection").scrollIntoView({behavior:"smooth"});$("amount").focus({preventScroll:true});});
+  $("historyNav").addEventListener("click",()=>{$("entries").scrollIntoView({behavior:"smooth",block:"center"});showAll=true;render();});
+  $("homeNav").addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
+  $("coupleNav").addEventListener("click",()=>document.querySelector(".pair-grid").scrollIntoView({behavior:"smooth",block:"center"}));
+  $("settingsNav").addEventListener("click",setBudget);$("settingsJump").addEventListener("click",setBudget);
+  if(configured&&window.supabase){supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);load();}
+  else {render();status("config.js のSupabase URLとキーを設定してね。",true);}
+})();
+</script>
+</body>
+</html>
