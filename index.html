@@ -140,7 +140,6 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
         <div class="field">
           <label for="amount">金額（円）</label>
           <input id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="例：2800" required>
-          <!-- 全額・半額ワンタップボタン -->
           <div class="preset-btns hidden" id="presetBtns">
             <button type="button" class="preset-btn" id="btnHalf">半額 (¥0)</button>
             <button type="button" class="preset-btn" id="btnFull">全額 (¥0)</button>
@@ -175,7 +174,8 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     && SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_PROJECT")
     && SUPABASE_ANON_KEY.length > 20 && !SUPABASE_ANON_KEY.includes("PASTE_");
   let supabase = null, entries = [], editingId = null, showAll = false;
-  let currentParentAmount = 0; // 選択された親立替の金額
+  let currentParentAmount = 0;
+  let sharedBudget = 40000; // デフォルト予算
 
   const now = new Date(); let month = new Date(now.getFullYear(), now.getMonth(), 1);
   const kinds = {
@@ -190,8 +190,23 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   const monthKey = d => String(d||"").slice(0,7);
   function status(msg,error=false){$("status").textContent=msg;$("status").classList.toggle("error",error);}
   function setMonthLabel(){ $("monthLabel").textContent=`${month.getFullYear()}年${month.getMonth()+1}月`; $("monthCaption").textContent=`${month.getFullYear()}年${month.getMonth()+1}月のふたりの家計`; }
-  function getBudget(){return Math.max(0,Number(localStorage.getItem("futari-budget")||40000)||0);}
-  function setBudget(){const value=prompt("今月の予算を入力してね（円）",String(getBudget()));if(value===null)return;const n=Number(value);if(!Number.isFinite(n)||n<0){status("予算は0以上の数字で入力してね。",true);return;}localStorage.setItem("futari-budget",String(Math.round(n)));render();}
+
+  // 予算変更（Supabaseに保存して共有）
+  async function setBudget(){
+    const value = prompt("今月の予算を入力してね（円）", String(sharedBudget));
+    if(value === null) return;
+    const n = Number(value);
+    if(!Number.isFinite(n) || n < 0){ status("予算は0以上の数字で入力してね。", true); return; }
+    
+    sharedBudget = Math.round(n);
+    if(supabase){
+      try {
+        await supabase.from("app_settings").upsert({ key: "budget", value: String(sharedBudget) });
+        status("予算を変更・共有したよ 🌸");
+      } catch(e){ console.error(e); }
+    }
+    render();
+  }
 
   function updateParentOptions() {
     const kind = $("kind").value;
@@ -229,7 +244,7 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     const mine = unsettledSpends.filter(e => e.kind === "you_paid").reduce((s, e) => s + Number(e.amount || 0), 0);
     const partner = unsettledSpends.filter(e => e.kind === "partner_paid").reduce((s, e) => s + Number(e.amount || 0), 0);
 
-    const budget = getBudget(), remaining = budget - total;
+    const budget = sharedBudget, remaining = budget - total;
     $("total").textContent = yen(total);
     $("mine").textContent = yen(mine);
     $("partner").textContent = yen(partner);
@@ -284,6 +299,13 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   async function load(){
     if(!supabase){$("entries").innerHTML='<div class="empty">Supabaseの設定を確認してね 🐾</div>';status("config.js のURL・キーを設定すると、ふたりで同じ記録を見られます。",true);return;}
     try{
+      // 設定（予算）の読み込み
+      const { data: settingsData } = await supabase.from("app_settings").select("*").eq("key", "budget").maybeSingle();
+      if(settingsData && settingsData.value) {
+        sharedBudget = Number(settingsData.value) || 40000;
+      }
+
+      // 記録一覧の読み込み
       const {data,error}=await supabase.from("ledger_entries").select("*").order("entry_date",{ascending:false}).order("created_at",{ascending:false});
       if(error)throw error;
       entries=data||[];
@@ -295,7 +317,6 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
 
   $("kind").addEventListener("change", updateParentOptions);
   
-  // 返済対象が選ばれた時に全額・半額ボタンを表示
   $("parentId").addEventListener("change", ev => {
     const pId = ev.target.value;
     if (pId) {
@@ -308,7 +329,6 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
         $("btnFull").textContent = `全額 (${yen(currentParentAmount)})`;
         $("presetBtns").classList.remove("hidden");
         
-        // デフォルトで半額をセット
         $("amount").value = half;
       }
     } else {
@@ -317,7 +337,6 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
     }
   });
 
-  // ワンタップボタン処理
   $("btnHalf").addEventListener("click", () => {
     if (currentParentAmount) $("amount").value = Math.round(currentParentAmount / 2);
   });
