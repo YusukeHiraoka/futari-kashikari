@@ -105,8 +105,8 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   </section>
 
   <section class="pair-grid">
-    <div class="card person-card"><div class="person-top"><div class="animal">🐶</div><div><div class="person-name" id="myLabel">あなた（犬）</div><div class="person-caption">今月のお支払い</div></div></div><span class="paw">🐾</span><div class="person-total" id="mine">¥0</div></div>
-    <div class="card person-card"><div class="person-top"><div class="animal">🐱</div><div><div class="person-name" id="partnerLabel">彼女（猫）</div><div class="person-caption">今月のお支払い</div></div></div><span class="paw">🐾</span><div class="person-total" id="partner">¥0</div></div>
+    <div class="card person-card"><div class="person-top"><div class="animal">🐶</div><div><div class="person-name" id="myLabel">ゆうすけくん（犬）</div><div class="person-caption">今月の実質負担</div></div></div><span class="paw">🐾</span><div class="person-total" id="mine">¥0</div></div>
+    <div class="card person-card"><div class="person-top"><div class="animal">🐱</div><div><div class="person-name" id="partnerLabel">ひまりちゃん（猫）</div><div class="person-caption">今月の実質負担</div></div></div><span class="paw">🐾</span><div class="person-total" id="partner">¥0</div></div>
   </section>
 
   <section class="card">
@@ -154,10 +154,10 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   let supabase = null, entries = [], editingId = null, showAll = false;
   const now = new Date(); let month = new Date(now.getFullYear(), now.getMonth(), 1);
   const kinds = {
-    you_paid:{label:"ゆうすけくんが払った",icon:"🐶",delta:1,side:"you",spend:true},
-    partner_paid:{label:"ひまりちゃんが払った",icon:"🐱",delta:-1,side:"partner",spend:true},
-    partner_repaid:{label:"ひまりちゃんから返済",icon:"🐱",delta:-1,side:"repayment",spend:false},
-    you_repaid:{label:"ゆうすけくんが返済",icon:"🐶",delta:1,side:"repayment",spend:false}
+    you_paid:{label:"ゆうすけくんが払った",icon:"🐶"},
+    partner_paid:{label:"ひまりちゃんが払った",icon:"🐱"},
+    partner_repaid:{label:"ひまりちゃんから返済",icon:"🐱"},
+    you_repaid:{label:"ゆうすけくんが返済",icon:"🐶"}
   };
   const yen = n => "¥" + Math.round(Math.abs(Number(n)||0)).toLocaleString("ja-JP");
   const localDate = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
@@ -170,23 +170,50 @@ input:focus,select:focus{border-color:#d77b9d;box-shadow:0 0 0 3px #d77b9d20}
   function render(){
     setMonthLabel();
     const monthEntries=entries.filter(e=>monthKey(e.entry_date)===monthKey(`${month.getFullYear()}-${String(month.getMonth()+1).padStart(2,"0")}`));
-    const spending=monthEntries.filter(e=>kinds[e.kind]?.spend);
-    const total=spending.reduce((s,e)=>s+Number(e.amount||0),0);
-    const mine=spending.filter(e=>e.kind==="you_paid").reduce((s,e)=>s+Number(e.amount||0),0);
-    const partner=spending.filter(e=>e.kind==="partner_paid").reduce((s,e)=>s+Number(e.amount||0),0);
-    const budget=getBudget(), remaining=budget-total;
-    $("total").textContent=yen(total);$("mine").textContent=yen(mine);$("partner").textContent=yen(partner);
-    $("budgetText").textContent=`予算 ${yen(budget)}`;$("remainingText").textContent=remaining>=0?`残り ${yen(remaining)}`:`予算オーバー ${yen(-remaining)}`;
-    $("progress").style.width=(budget?Math.min(100,total/budget*100):total?100:0)+"%";
-    const list=[...entries].sort((a,b)=>String(b.entry_date).localeCompare(String(a.entry_date))||String(b.created_at||"").localeCompare(String(a.created_at||"")));
-    const visible=showAll?list:list.slice(0,4);
-    if(!visible.length){$("entries").innerHTML='<div class="empty">まだ記録がないよ 🐾<br>最初の思い出を追加してみよう！</div>';return;}
-    $("entries").innerHTML=visible.map(e=>{
-      const k=kinds[e.kind];if(!k)return "";
-      const plus=k.delta>0, date=String(e.entry_date||"").replaceAll("-","/");
-      return `<div class="entry"><div class="entry-avatar">${k.icon}</div><div class="entry-main"><div class="entry-title">${esc(e.note||k.label)}</div><div class="entry-meta">${esc(date)} · ${esc(k.label)}</div></div><div><div class="entry-amount">${k.spend?yen(e.amount):(plus?"+":"−")+yen(e.amount)}</div><div class="entry-controls"><button class="tiny" data-edit="${esc(e.id)}">編集</button><button class="tiny" data-delete="${esc(e.id)}">削除</button></div></div></div>`;
+    
+    // 各項目の集計
+    const youPaid = monthEntries.filter(e=>e.kind==="you_paid").reduce((s,e)=>s+Number(e.amount||0),0);
+    const partnerPaid = monthEntries.filter(e=>e.kind==="partner_paid").reduce((s,e)=>s+Number(e.amount||0),0);
+    const partnerRepaid = monthEntries.filter(e=>e.kind==="partner_repaid").reduce((s,e)=>s+Number(e.amount||0),0);
+    const youRepaid = monthEntries.filter(e=>e.kind==="you_repaid").reduce((s,e)=>s+Number(e.amount||0),0);
+
+    // ふたりの合計支出（全体の純粋な支出額）
+    const total = youPaid + partnerPaid;
+
+    // 実質負担額の計算（返済があれば支払った側が減り、返済した側が増える）
+    const mine = youPaid - partnerRepaid + youRepaid;
+    const partner = partnerPaid - youRepaid + partnerRepaid;
+
+    const budget = getBudget(), remaining = budget - total;
+    $("total").textContent = yen(total);
+    $("mine").textContent = (mine < 0 ? "-" : "") + yen(mine);
+    $("partner").textContent = (partner < 0 ? "-" : "") + yen(partner);
+    $("budgetText").textContent = `予算 ${yen(budget)}`;
+    $("remainingText").textContent = remaining >= 0 ? `残り ${yen(remaining)}` : `予算オーバー ${yen(-remaining)}`;
+    $("progress").style.width = (budget ? Math.min(100, total / budget * 100) : total ? 100 : 0) + "%";
+
+    const list = [...entries].sort((a,b)=>String(b.entry_date).localeCompare(String(a.entry_date))||String(b.created_at||"").localeCompare(String(a.created_at||"")));
+    const visible = showAll ? list : list.slice(0,4);
+
+    if(!visible.length){
+      $("entries").innerHTML = '<div class="empty">まだ記録がないよ 🐾<br>最初の思い出を追加してみよう！</div>';
+      return;
+    }
+
+    $("entries").innerHTML = visible.map(e => {
+      const k = kinds[e.kind];
+      if(!k) return "";
+      const date = String(e.entry_date||"").replaceAll("-","/");
+      
+      // 履歴一覧の表示スタイル
+      let sign = "";
+      if (e.kind === "partner_repaid") sign = "+"; // 返済された（受け取った）
+      if (e.kind === "you_repaid") sign = "−";     // 返済した（払った）
+
+      return `<div class="entry"><div class="entry-avatar">${k.icon}</div><div class="entry-main"><div class="entry-title">${esc(e.note||k.label)}</div><div class="entry-meta">${esc(date)} · ${esc(k.label)}</div></div><div><div class="entry-amount">${sign}${yen(e.amount)}</div><div class="entry-controls"><button class="tiny" data-edit="${esc(e.id)}">編集</button><button class="tiny" data-delete="${esc(e.id)}">削除</button></div></div></div>`;
     }).join("");
-    $("showAll").textContent=showAll?"閉じる ↑":"すべて見る ›";
+
+    $("showAll").textContent = showAll ? "閉じる ↑" : "すべて見る ›";
   }
   function resetForm(){editingId=null;$("entryForm").reset();$("entryDate").value=localDate();$("formTitle").textContent="🐾 記録を追加";$("saveBtn").textContent="＋ ふたりの記録に追加";$("cancelEdit").classList.add("hidden");}
   async function load(){
